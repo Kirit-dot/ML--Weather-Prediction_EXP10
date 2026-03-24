@@ -22,67 +22,67 @@ To write a program to predict daily temperature , PM2.5 pollution level and Ener
 Program to implement the Random Forest Algorithm to predict daily temperature , PM2.5 pollution level and Energy based on environmental sensor data.
 Developed by: KIRIT LULLA
 RegisterNumber:  25015046
-#Ex 10 - Implementation of K Means Clustering for Customer Segmentation
-# Import libraries
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+import joblib
 
-# ------------------------------
-# Step 1: Sample dataset
-# ------------------------------
-data = {
-    'CustomerID': [1,2,3,4,5,6,7,8,9,10],
-    'Gender': ['Male','Female','Female','Male','Female','Male','Male','Female','Female','Male'],
-    'Age': [19,21,20,23,31,22,35,30,25,28],
-    'Annual Income (k$)': [15,16,17,18,19,20,21,22,23,24],
-    'Spending Score (1-100)': [39,81,6,77,40,76,6,94,3,72]
-}
+# Load dataset
+df = pd.read_csv("weather-station-eee-block_2024_07_13.csv")
+df.columns = df.columns.str.strip()
+df['time'] = pd.to_datetime(df['time'], errors='coerce')
 
-df = pd.DataFrame(data)
+print("Original rows:", len(df))
 
-# ------------------------------
-# Step 2: Select features for clustering
-# ------------------------------
-X = df[['Annual Income (k$)', 'Spending Score (1-100)']]
-#no y because it is unsupervised learning
+# Only drop if target missing
+df = df.dropna(subset=['tem', 'pm2_5'])
 
-# ------------------------------
-# Step 3: Apply K-Means (choose clusters, e.g., 3)
-# ------------------------------
-kmeans = KMeans(n_clusters=3, init='k-means++', random_state=42)
-df['Cluster'] = kmeans.fit_predict(X)  # Automatically fits and assigns clusters
-# fit and predict together as unsupervised learning
-# ------------------------------
-# Step 4: Visualize clusters
-# ------------------------------
-plt.figure(figsize=(8,6))
-for i in range(3):
-    plt.scatter(X[df['Cluster']==i]['Annual Income (k$)'],
-                X[df['Cluster']==i]['Spending Score (1-100)'],
-                label=f'Cluster {i+1}')
+# Fill feature columns instead of dropping
+df['hum'] = df['hum'].fillna(df['hum'].mean())
+df['pressure'] = df['pressure'].fillna(df['pressure'].mean())
+df['wind_speed'] = df['wind_speed'].fillna(df['wind_speed'].mean())
+df['co2'] = df['co2'].fillna(df['co2'].mean())
 
-# Plot centroids
-plt.scatter(kmeans.cluster_centers_[:,0], kmeans.cluster_centers_[:,1],
-            s=200, c='yellow', label='Centroids', marker='X')
+# Sort by time
+df = df.sort_values('time')
 
-plt.title('Customer Segmentation (K-Means)')
-plt.xlabel('Annual Income (k$)')
-plt.ylabel('Spending Score (1-100)')
-plt.legend()
-plt.show()
+# Create lag features
+df['Temp_Lag1'] = df['tem'].shift(1)
+df['PM_Lag1'] = df['pm2_5'].shift(1)
 
-# ------------------------------
-# Step 5: Show dataset with clusters
-# ------------------------------
-print(df)
+# Only remove first row created by shift
+df = df.iloc[1:]
+
+print("Rows after preprocessing:", len(df))
+
+# Features
+X = df[['hum', 'pressure', 'wind_speed', 'co2',
+        'Temp_Lag1', 'PM_Lag1']]
+
+y_temp = df['tem']
+y_pm = df['pm2_5']
+
+print("Training samples:", len(X))
+
+# Train models
+model_temp = RandomForestRegressor(n_estimators=300, random_state=42)
+model_pm = RandomForestRegressor(n_estimators=300, random_state=42)
+
+model_temp.fit(X, y_temp)
+model_pm.fit(X, y_pm)
+
+# Save models
+joblib.dump(model_temp, "temperature_model.pkl")
+joblib.dump(model_pm, "pm25_model.pkl")
+
+print("Models trained and saved successfully!")
 
 */
 ```
 
 ## Output:
-<img width="920" height="670" alt="image" src="https://github.com/user-attachments/assets/1fdad73f-d2c9-45aa-813c-78389a23a938" />
-<img width="798" height="498" alt="image" src="https://github.com/user-attachments/assets/719cdefb-3cb3-4941-b832-77661b3cf97b" />
+<img width="1047" height="458" alt="image" src="https://github.com/user-attachments/assets/566b0555-76da-4921-98b3-b0803e42b39d" />
+<img width="1045" height="774" alt="image" src="https://github.com/user-attachments/assets/3e80d319-68cf-447e-af00-2f39e65316b8" />
 
 
 
